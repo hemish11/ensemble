@@ -7,6 +7,7 @@ import 'package:ensemble/action/invoke_api_action.dart';
 import 'package:ensemble/action/misc_action.dart';
 import 'package:ensemble/action/navigation_action.dart';
 import 'package:ensemble/action/notification_action.dart';
+import 'package:ensemble/action/voice_input_action.dart';
 import 'package:ensemble/framework/data_context.dart';
 import 'package:ensemble/framework/error_handling.dart';
 import 'package:ensemble/framework/event.dart';
@@ -917,6 +918,8 @@ enum ActionType {
   clearBadgeCount,
   callExternalMethod,
   callNativeMethod,
+  startListening,
+  stopListening,
 }
 
 enum ToastType { success, error, warning, info }
@@ -1062,6 +1065,10 @@ abstract class EnsembleAction {
       return SaveKeychain.fromYaml(payload: payload);
     } else if (actionType == ActionType.clearKeychain) {
       return ClearKeychain.fromYaml(payload: payload);
+    } else if (actionType == ActionType.startListening) {
+      return StartListeningAction.from(payload);
+    } else if (actionType == ActionType.stopListening) {
+      return StopListeningAction.from(payload);
     }
     throw LanguageError("Invalid action.",
         recovery: "Make sure to use one of Ensemble-provided actions.");

@@ -7,6 +7,7 @@ import 'package:ensemble/action/action_invokable.dart';
 import 'package:ensemble/action/call_external_method.dart';
 import 'package:ensemble/action/invoke_api_action.dart';
 import 'package:ensemble/action/navigation_action.dart';
+import 'package:ensemble/action/voice_input_action.dart';
 import 'package:ensemble/ensemble.dart';
 import 'package:ensemble/ensemble_app.dart';
 import 'package:ensemble/framework/all_countries.dart';
@@ -362,6 +363,10 @@ class NativeInvokable extends ActionInvokable {
         final scope = ScreenController().getScopeManager(buildContext);
         callNativeMethod(buildContext, scope, inputs);
       },
+      ActionType.startListening.name: (inputs) =>
+          StartListeningAction.from(inputs),
+      ActionType.stopListening.name: (inputs) =>
+          StopListeningAction.from(inputs),
       'connectSocket': (String socketName, Map<dynamic, dynamic>? inputs) {
         connectSocket(buildContext, socketName, inputs: inputs);
       },

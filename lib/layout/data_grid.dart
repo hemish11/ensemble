@@ -4,6 +4,7 @@ import 'package:ensemble/framework/error_handling.dart';
 import 'package:ensemble/framework/scope.dart';
 import 'package:ensemble/framework/view/data_scope_widget.dart';
 import 'package:ensemble/framework/widget/has_children.dart';
+import 'package:ensemble/layout/box/base_box_layout.dart';
 import 'package:ensemble/layout/templated.dart';
 import 'package:ensemble/page_model.dart';
 import 'package:ensemble/framework/widget/widget.dart';
@@ -19,6 +20,18 @@ import 'package:ensemble/framework/view/page.dart';
 import 'package:uuid/uuid.dart';
 
 enum DataColumnSortType { ascending, descending }
+
+class DataRowMetadata {
+  String id;
+  bool isVisible = true;
+  DataRow row;
+
+  DataRowMetadata({
+    required this.id,
+    required this.row,
+    this.isVisible = true,
+  });
+}
 
 //8e26249e-c08c-4b3e-8584-cc83a5c9bc29
 class DataGrid extends StatefulWidget
@@ -179,7 +192,8 @@ class EnsembleDataRow extends StatefulWidget
   }
 }
 
-class EnsembleDataRowState extends State<EnsembleDataRow> {
+class EnsembleDataRowState extends State<EnsembleDataRow>
+    with WidgetStateMixin {
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
@@ -235,12 +249,12 @@ class DataGridState extends WidgetState<DataGrid>
   List<dynamic> dataList = [];
   DataColumnSort? dataColumnSort;
 
-  final List<DataRow> _rows = [];
+  final List<DataRowMetadata> _rows = [];
   final List<Widget> _children = [];
 
   // List for the visibilities for individual row
-  List<bool> rowVisibilities = [];
-  List<String> rowIds = [];
+  // List<bool> rowVisibilities = [];
+  // List<String> rowIds = [];
   int lastRowVisibilitiesLength = 0;
 
   @override
@@ -292,16 +306,15 @@ class DataGridState extends WidgetState<DataGrid>
     _buildChildren();
 
     // Ensure that _parseVisibility runs only once as it is inside buildWidget. Cannot put it in initState
-    if (lastRowVisibilitiesLength != rowVisibilities.length ||
-        rowVisibilities.isEmpty) {
-      lastRowVisibilitiesLength = rowVisibilities.length;
+    // if (lastRowVisibilitiesLength != _rows.length) {
+    //   lastRowVisibilitiesLength = rowVisibilities.length;
 
-      if (lastRowVisibilitiesLength != rowVisibilities.length) {
-        _reparseVisibility();
-      } else {
-        rowVisibilities = _parseVisibility();
-      }
-    }
+    //   if (lastRowVisibilitiesLength != rowVisibilities.length) {
+    //     _reparseVisibility();
+    //   } else {
+    //     rowVisibilities = _parseVisibility();
+    //   }
+    // }
 
     _buildDataRow();
 
@@ -322,7 +335,7 @@ class DataGridState extends WidgetState<DataGrid>
       sortColumnIndex: sortColIndex,
       sortAscending: sortOrder == DataColumnSortType.ascending.name,
       columns: _columns,
-      rows: _rows,
+      rows: _rows.where((e) => e.isVisible).map((e) => e.row).toList(),
       horizontalMargin: widget.controller.horizontalMargin,
       headingTextStyle: _buildHeadingStyle(),
       dataRowHeight: widget.controller.dataRowHeight,
@@ -365,7 +378,7 @@ class DataGridState extends WidgetState<DataGrid>
         visibilities.add(widget.visible);
 
         widget.id ??= const Uuid().v4();
-        rowIds.add(widget.id!);
+        // rowIds.add(widget.id!);
       }
     }
 
@@ -386,9 +399,7 @@ class DataGridState extends WidgetState<DataGrid>
       if (widget is! EnsembleDataRow) {
         throw Exception("Direct children of DataGrid must be of type DataRow");
       } else {
-        print(rowIds);
-
-        if (rowIds.contains(widget.id)) continue;
+        // if (rowIds.contains(widget.id)) continue;
 
         visibilities.insert(i, widget.visible);
       }
@@ -436,7 +447,7 @@ class DataGridState extends WidgetState<DataGrid>
 
   void _buildDataRow() {
     _rows.clear();
-    // Added children.asMap().entries to have access for individual element index
+
     for (int index = 0; index < _children.length; index++) {
       Widget w = _children[index];
 
@@ -452,45 +463,49 @@ class DataGridState extends WidgetState<DataGrid>
 
       EnsembleDataRow child = w;
 
+      // if (child._controller.dataGridState == null) {
+      //   child._controller._bind(this);
+      // }
+
       // Callback to update the visible of a given row changes
       child.onVisibilityChanged = (value) {
         setState(() {
-          rowVisibilities[index] = value;
+          _rows[index].isVisible = value;
         });
       };
 
-      if (!rowVisibilities[index]) {
-        continue;
-      }
-      List<DataCell> cells = [];
-      if (child.children != null) {
-        buildChildren(child.children!,
-                // scope comes from the rowScope (item-template) or the widget scope (children)
-                preferredScopeManager: rowScope?.scopeManager ?? scopeManager)
-            .asMap()
-            .forEach((index, Widget c) {
-          // for templated row only, wrap each cell widget in a DataScopeWidget, and simply use the row's datascope
-          if (rowScope != null) {
-            Widget scopeWidget =
-                DataScopeWidget(scopeManager: rowScope.scopeManager, child: c);
+      print(_rows);
 
-            cells.add(
-              DataCell(EnsembleGestureDetector(
-                child: scopeWidget,
-                onTap: () => _onItemTap(index),
-              )),
-            );
-          } else {
-            cells.add(
-              DataCell(EnsembleGestureDetector(
-                child: c,
-                onTap: () => _onItemTap(index),
-              )),
-            );
-          }
-        });
-      }
-      if (_columns.length != cells.length) {
+      // if (!rowVisibilities[index]) {
+      //   continue;
+      // }
+      List<DataCell> cells = [];
+      buildChildren(child.children!,
+              // scope comes from the rowScope (item-template) or the widget scope (children)
+              preferredScopeManager: rowScope?.scopeManager ?? scopeManager)
+          .asMap()
+          .forEach((index, Widget c) {
+        // for templated row only, wrap each cell widget in a DataScopeWidget, and simply use the row's datascope
+        if (rowScope != null) {
+          Widget scopeWidget =
+              DataScopeWidget(scopeManager: rowScope.scopeManager, child: c);
+
+          cells.add(
+            DataCell(EnsembleGestureDetector(
+              child: scopeWidget,
+              onTap: () => _onItemTap(index),
+            )),
+          );
+        } else {
+          cells.add(
+            DataCell(EnsembleGestureDetector(
+              child: c,
+              onTap: () => _onItemTap(index),
+            )),
+          );
+        }
+      });
+      if (_columns.length != cells.length && child.visible) {
         if (kDebugMode) {
           print(
               'Number of DataGrid columns must be equal to the number of cells in each row. Number of DataGrid columns is ${_columns.length} '
@@ -509,8 +524,16 @@ class DataGridState extends WidgetState<DataGrid>
           }
         }
       }
-      _rows.add(DataRow(cells: cells));
+      _rows.add(
+        DataRowMetadata(
+          id: const Uuid().v4(),
+          row: DataRow(cells: cells),
+          isVisible: child.visible,
+        ),
+      );
     }
+
+    print(_rows);
   }
 
   void _setInitialDataColumn() {

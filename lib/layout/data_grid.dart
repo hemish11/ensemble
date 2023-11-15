@@ -363,50 +363,50 @@ class DataGridState extends WidgetState<DataGrid>
     );
   }
 
-  // Parsers the visibility out of the list of rows
-  List<bool> _parseVisibility() {
-    List<bool> visibilities = [];
+  // // Parsers the visibility out of the list of rows
+  // List<bool> _parseVisibility() {
+  //   List<bool> visibilities = [];
 
-    for (var widget in _children) {
-      if (widget is DataScopeWidget) {
-        widget = widget.child;
-      }
+  //   for (var widget in _children) {
+  //     if (widget is DataScopeWidget) {
+  //       widget = widget.child;
+  //     }
 
-      if (widget is! EnsembleDataRow) {
-        throw Exception("Direct children of DataGrid must be of type DataRow");
-      } else {
-        visibilities.add(widget.visible);
+  //     if (widget is! EnsembleDataRow) {
+  //       throw Exception("Direct children of DataGrid must be of type DataRow");
+  //     } else {
+  //       visibilities.add(widget.visible);
 
-        widget.id ??= const Uuid().v4();
-        // rowIds.add(widget.id!);
-      }
-    }
+  //       widget.id ??= const Uuid().v4();
+  //       // rowIds.add(widget.id!);
+  //     }
+  //   }
 
-    return visibilities;
-  }
+  //   return visibilities;
+  // }
 
-  List<bool> _reparseVisibility() {
-    List<bool> visibilities = [];
+  // List<bool> _reparseVisibility() {
+  //   List<bool> visibilities = [];
 
-    // for (var widget in _children) {
-    for (int i = 0; i < _children.length; i++) {
-      var widget = _children[i];
+  //   // for (var widget in _children) {
+  //   for (int i = 0; i < _children.length; i++) {
+  //     var widget = _children[i];
 
-      if (widget is DataScopeWidget) {
-        widget = widget.child;
-      }
+  //     if (widget is DataScopeWidget) {
+  //       widget = widget.child;
+  //     }
 
-      if (widget is! EnsembleDataRow) {
-        throw Exception("Direct children of DataGrid must be of type DataRow");
-      } else {
-        // if (rowIds.contains(widget.id)) continue;
+  //     if (widget is! EnsembleDataRow) {
+  //       throw Exception("Direct children of DataGrid must be of type DataRow");
+  //     } else {
+  //       // if (rowIds.contains(widget.id)) continue;
 
-        visibilities.insert(i, widget.visible);
-      }
-    }
+  //       visibilities.insert(i, widget.visible);
+  //     }
+  //   }
 
-    return visibilities;
-  }
+  //   return visibilities;
+  // }
 
   TextStyle? _buildHeadingStyle() {
     TextStyle? headingTextStyle;
@@ -446,6 +446,8 @@ class DataGridState extends WidgetState<DataGrid>
   }
 
   void _buildDataRow() {
+    final updatedRows = _rows;
+
     _rows.clear();
 
     for (int index = 0; index < _children.length; index++) {
@@ -473,8 +475,6 @@ class DataGridState extends WidgetState<DataGrid>
           _rows[index].isVisible = value;
         });
       };
-
-      print(_rows);
 
       // if (!rowVisibilities[index]) {
       //   continue;
@@ -532,6 +532,19 @@ class DataGridState extends WidgetState<DataGrid>
         ),
       );
     }
+
+    final initialRows = _rows;
+    print(updatedRows.map((e) => e.isVisible));
+    print(initialRows.map((e) => e.isVisible));
+
+    if (updatedRows.length == initialRows.length) {
+      if (updatedRows.map((e) => e.isVisible).toList() !=
+          initialRows.map((e) => e.isVisible).toList()) {
+        for (int i = 0; i < _rows.length; i++) {
+          _rows[i].isVisible = updatedRows[i].isVisible;
+        }
+      }
+    } else {}
 
     print(_rows);
   }

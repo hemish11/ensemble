@@ -16,6 +16,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:ensemble_ts_interpreter/invokables/invokable.dart';
 import 'package:ensemble/framework/view/page.dart';
+import 'package:uuid/uuid.dart';
 
 enum DataColumnSortType { ascending, descending }
 
@@ -239,6 +240,8 @@ class DataGridState extends WidgetState<DataGrid>
 
   // List for the visibilities for individual row
   List<bool> rowVisibilities = [];
+  List<String> rowIds = [];
+  int lastRowVisibilitiesLength = 0;
 
   @override
   void initState() {
@@ -289,8 +292,15 @@ class DataGridState extends WidgetState<DataGrid>
     _buildChildren();
 
     // Ensure that _parseVisibility runs only once as it is inside buildWidget. Cannot put it in initState
-    if (rowVisibilities.isEmpty) {
-      rowVisibilities = _parseVisibility();
+    if (lastRowVisibilitiesLength != rowVisibilities.length ||
+        rowVisibilities.isEmpty) {
+      lastRowVisibilitiesLength = rowVisibilities.length;
+
+      if (lastRowVisibilitiesLength != rowVisibilities.length) {
+        _reparseVisibility();
+      } else {
+        rowVisibilities = _parseVisibility();
+      }
     }
 
     _buildDataRow();
@@ -345,10 +355,42 @@ class DataGridState extends WidgetState<DataGrid>
     List<bool> visibilities = [];
 
     for (var widget in _children) {
+      if (widget is DataScopeWidget) {
+        widget = widget.child;
+      }
+
       if (widget is! EnsembleDataRow) {
         throw Exception("Direct children of DataGrid must be of type DataRow");
       } else {
         visibilities.add(widget.visible);
+
+        widget.id ??= const Uuid().v4();
+        rowIds.add(widget.id!);
+      }
+    }
+
+    return visibilities;
+  }
+
+  List<bool> _reparseVisibility() {
+    List<bool> visibilities = [];
+
+    // for (var widget in _children) {
+    for (int i = 0; i < _children.length; i++) {
+      var widget = _children[i];
+
+      if (widget is DataScopeWidget) {
+        widget = widget.child;
+      }
+
+      if (widget is! EnsembleDataRow) {
+        throw Exception("Direct children of DataGrid must be of type DataRow");
+      } else {
+        print(rowIds);
+
+        if (rowIds.contains(widget.id)) continue;
+
+        visibilities.insert(i, widget.visible);
       }
     }
 

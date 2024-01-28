@@ -122,7 +122,16 @@ mixin DeviceInfoCapability {
         browserInfo = await _deviceInfoPlugin.webBrowserInfo;
       } else {
         if (Platform.isAndroid) {
-          _platform = DevicePlatform.android;
+          DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+          AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+          bool isTV =
+              androidInfo.systemFeatures.contains('android.software.leanback');
+
+          if (isTV) {
+            _platform = DevicePlatform.androidTv;
+          } else {
+            _platform = DevicePlatform.android;
+          }
         } else if (Platform.isIOS) {
           _platform = DevicePlatform.ios;
         } else if (Platform.isMacOS) {
@@ -218,7 +227,7 @@ class Location with Invokable {
   }
 }
 
-enum DevicePlatform { web, android, ios, macos, windows, other }
+enum DevicePlatform { web, android, ios, macos, windows, androidTv, other }
 
 // the wrapper class for location request that includes other info
 class DeviceLocation {
